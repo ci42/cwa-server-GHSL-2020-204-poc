@@ -1,7 +1,5 @@
 package app.coronawarn.server.services.submission.validation;
 
-import static org.springframework.util.ObjectUtils.isEmpty;
-
 import app.coronawarn.server.common.protocols.external.exposurenotification.TemporaryExposureKey;
 import app.coronawarn.server.common.protocols.internal.SubmissionPayload;
 import com.google.protobuf.ByteString;
@@ -23,7 +21,6 @@ public class PrintableSubmissionPayload {
 
   /**
    * Creates a printable Version of SubmissionPayload the logger can work with.
-   * 
    * @param submissionPayload SubmissionPayload which shall be made printable
    */
   public PrintableSubmissionPayload(SubmissionPayload submissionPayload) {
@@ -43,20 +40,16 @@ public class PrintableSubmissionPayload {
         .append(VISITED_COUNTRIES_MESSAGE).append(visitedCountries)
         .append(CONSENT_MESSAGE).append(consentToFederation)
         .append(PADDING_MESSAGE).append(padding.size());
-    if (isEmpty(keys)) {
-      stringBuilder.append(" keys: are empty!");
-    } else {
-      stringBuilder.append(" " + keys.size() + " keys: ");
-    }
+    stringBuilder.append(" keys: ");
     for (TemporaryExposureKey key : keys) {
       stringBuilder
-          .append("{")
-          .append("data: HIDDEN")
-          .append(",trl: ").append(key.getTransmissionRiskLevel())
-          .append(",rsin: ").append(key.getRollingStartIntervalNumber())
-          .append(",type: ").append(key.getReportType())
-          .append(",dsoos: ").append(key.getDaysSinceOnsetOfSymptoms())
-          .append("},");
+          .append(" {")
+          .append(" key_data: HIDDEN")
+          .append(" transmission_risk_level: ").append(key.getTransmissionRiskLevel())
+          .append(" rolling_start_interval_number: ").append(key.getRollingStartIntervalNumber())
+          .append(" report_type: ").append(key.getReportType())
+          .append(" days_since_onset_of_symptoms: ").append(key.getDaysSinceOnsetOfSymptoms())
+          .append(" }");
     }
     return stringBuilder.toString();
   }
