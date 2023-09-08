@@ -17,8 +17,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +30,20 @@ public class DiagnosisKeyService {
   private static final Logger logger = LoggerFactory.getLogger(DiagnosisKeyService.class);
   private final DiagnosisKeyRepository keyRepository;
   private final ValidDiagnosisKeyFilter validationFilter;
+  private final JdbcTemplate jdbcTemplate;
 
-  public DiagnosisKeyService(DiagnosisKeyRepository keyRepository, ValidDiagnosisKeyFilter filter) {
+  /**
+   * Constructor.
+   *
+   * @param keyRepository repo.
+   * @param filter filter.
+   * @param jdbcTemplate template.
+   */
+  public DiagnosisKeyService(DiagnosisKeyRepository keyRepository,
+      ValidDiagnosisKeyFilter filter, JdbcTemplate jdbcTemplate) {
     this.keyRepository = keyRepository;
     this.validationFilter = filter;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   /**
@@ -47,14 +59,14 @@ public class DiagnosisKeyService {
   @Transactional
   public int saveDiagnosisKeys(Collection<DiagnosisKey> diagnosisKeys) {
     int numberOfInsertedKeys = 0;
-
     for (DiagnosisKey diagnosisKey : diagnosisKeys) {
-      boolean keyInsertedSuccessfully = keyRepository.saveDoNothingOnConflict(
+      //      boolean keyInsertedSuccessfully = keyRepository.saveDoNothingOnConflict(
+      boolean keyInsertedSuccessfully = keyRepository.saveDoNothingOnConflictEvil(
           diagnosisKey.getKeyData(), diagnosisKey.getRollingStartIntervalNumber(), diagnosisKey.getRollingPeriod(),
           diagnosisKey.getSubmissionTimestamp(), diagnosisKey.getTransmissionRiskLevel(),
           diagnosisKey.getOriginCountry(), diagnosisKey.getVisitedCountries().toArray(new String[0]),
           diagnosisKey.getReportType().name(), diagnosisKey.getDaysSinceOnsetOfSymptoms(),
-          diagnosisKey.isConsentToFederation());
+          diagnosisKey.isConsentToFederation(), jdbcTemplate);
 
       if (keyInsertedSuccessfully) {
         numberOfInsertedKeys++;

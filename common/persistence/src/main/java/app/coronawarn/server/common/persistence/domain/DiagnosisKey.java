@@ -67,11 +67,11 @@ public class DiagnosisKey {
 
   private final boolean consentToFederation;
 
-  @Size(max = ISO_COUNTRY_CODE_LENGTH, message = "Origin country code must have length of " + ISO_COUNTRY_CODE_LENGTH
-      + ".")
+  //@Size(max = ISO_COUNTRY_CODE_LENGTH, message = "Origin country code must have length of " + ISO_COUNTRY_CODE_LENGTH
+  //    + ".")
   private final String originCountry;
 
-  @ValidCountries
+  //@ValidCountries
   private final Set<String> visitedCountries;
 
   private final ReportType reportType;

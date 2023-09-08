@@ -12,10 +12,14 @@ import app.coronawarn.server.common.persistence.service.FederationBatchInfoServi
 import app.coronawarn.server.common.persistence.service.FederationUploadKeyService;
 import app.coronawarn.server.common.persistence.service.common.KeySharingPoliciesChecker;
 import app.coronawarn.server.common.persistence.service.common.ValidDiagnosisKeyFilter;
+import java.util.Date;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 
 @SpringBootApplication
 @Configuration
@@ -31,9 +35,11 @@ public class TestApplication {
     return new KeySharingPoliciesChecker();
   }
 
+  @Autowired
+  JdbcTemplate jdbcTemplate;
   @Bean
   DiagnosisKeyService createDiagnosisKeyService(DiagnosisKeyRepository keyRepository) {
-    return new DiagnosisKeyService(keyRepository, validKeysFilter());
+    return new DiagnosisKeyService(keyRepository, validKeysFilter(), jdbcTemplate);
   }
 
   @Bean
