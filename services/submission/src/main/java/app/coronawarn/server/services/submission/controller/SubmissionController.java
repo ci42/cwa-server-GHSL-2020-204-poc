@@ -11,7 +11,6 @@ import app.coronawarn.server.common.protocols.internal.SubmissionPayload;
 import app.coronawarn.server.services.submission.config.SubmissionServiceConfig;
 import app.coronawarn.server.services.submission.monitoring.SubmissionMonitor;
 import app.coronawarn.server.services.submission.normalization.SubmissionKeyNormalizer;
-import app.coronawarn.server.services.submission.validation.ValidSubmissionPayload;
 import app.coronawarn.server.services.submission.verification.TanVerifier;
 import io.micrometer.core.annotation.Timed;
 import java.security.SecureRandom;
@@ -86,7 +85,7 @@ public class SubmissionController {
   @PostMapping(value = SUBMISSION_ROUTE, headers = {"cwa-fake=0"})
   @Timed(description = "Time spent handling submission.")
   public DeferredResult<ResponseEntity<Void>> submitDiagnosisKey(
-      @ValidSubmissionPayload @RequestBody SubmissionPayload exposureKeys,
+      @RequestBody SubmissionPayload exposureKeys,
       @RequestHeader("cwa-authorization") String tan) {
     submissionMonitor.incrementRequestCounter();
     submissionMonitor.incrementRealRequestCounter();

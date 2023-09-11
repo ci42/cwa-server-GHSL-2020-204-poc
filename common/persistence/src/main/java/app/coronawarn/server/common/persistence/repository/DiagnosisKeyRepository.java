@@ -1,61 +1,122 @@
-
-
 package app.coronawarn.server.common.persistence.repository;
 
 import app.coronawarn.server.common.persistence.domain.DiagnosisKey;
-import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jdbc.repository.query.Modifying;
-import org.springframework.data.jdbc.repository.query.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface DiagnosisKeyRepository extends PagingAndSortingRepository<DiagnosisKey, Long> {
+public class DiagnosisKeyRepository implements PagingAndSortingRepository<DiagnosisKey, Long> {
 
-  /**
-   * Counts all entries that have a submission timestamp older than the specified one.
-   *
-   * @param submissionTimestamp The submission timestamp up to which entries will be expired.
-   * @return The number of expired keys.
-   */
-  @Query("SELECT COUNT(*) FROM diagnosis_key WHERE submission_timestamp<:threshold")
-  int countOlderThan(@Param("threshold") long submissionTimestamp);
+  @Autowired
+  public DiagnosisKeyRepositoryDelegate repo;
 
-  /**
-   * Deletes all entries that have a submission timestamp older than the specified one.
-   *
-   * @param submissionTimestamp The submission timestamp up to which entries will be deleted.
-   */
-  @Modifying
-  @Query("DELETE FROM diagnosis_key WHERE submission_timestamp<:threshold")
-  void deleteOlderThan(@Param("threshold") long submissionTimestamp);
+  @Autowired
+  public JdbcTemplate jdbcTemplate;
 
+  @Override
+  public Iterable<DiagnosisKey> findAll(Sort sort) {
+    return repo.findAll(sort);
+  }
 
-  /**
-   * Attempts to write the specified diagnosis key information into the database. If a row with the specified key data
-   * already exists, no data is inserted.
-   *
-   * @param keyData                    The key data of the diagnosis key.
-   * @param rollingStartIntervalNumber The rolling start interval number of the diagnosis key.
-   * @param rollingPeriod              The rolling period of the diagnosis key.
-   * @param submissionTimestamp        The submission timestamp of the diagnosis key.
-   * @param transmissionRisk           The transmission risk level of the diagnosis key.
-   * @param originCountry              The origin country from the app.
-   * @param visitedCountries           The list of countries this transmissions is relevant for.
-   * @param reportType                 The report type of the diagnosis key.
-   * @return {@literal true} if the diagnosis key was inserted successfully, {@literal false} otherwise.
-   */
-  @Modifying
-  @Query("INSERT INTO diagnosis_key "
-      + "(key_data, rolling_start_interval_number, rolling_period, submission_timestamp, transmission_risk_level, "
-      + "origin_country, visited_countries, report_type, days_since_onset_of_symptoms, consent_to_federation) "
-      + "VALUES (:keyData, :rollingStartIntervalNumber, :rollingPeriod, :submissionTimestamp, :transmissionRisk, "
-      + ":origin_country, :visited_countries, :report_type, :days_since_onset_of_symptoms, :consent_to_federation) "
-      + "ON CONFLICT DO NOTHING")
-  boolean saveDoNothingOnConflict(
+  @Override
+  public Page<DiagnosisKey> findAll(Pageable pageable) {
+    return repo.findAll(pageable);
+  }
+
+  @Override
+  public <S extends DiagnosisKey> S save(S entity) {
+    return repo.save(entity);
+  }
+
+  @Override
+  public <S extends DiagnosisKey> Iterable<S> saveAll(Iterable<S> entities) {
+    return repo.saveAll(entities);
+  }
+
+  @Override
+  public Optional<DiagnosisKey> findById(Long aLong) {
+    return repo.findById(aLong);
+  }
+
+  @Override
+  public boolean existsById(Long aLong) {
+    return repo.existsById(aLong);
+  }
+
+  @Override
+  public Iterable<DiagnosisKey> findAll() {
+    return repo.findAll();
+  }
+
+  @Override
+  public Iterable<DiagnosisKey> findAllById(Iterable<Long> longs) {
+    return repo.findAllById(longs);
+  }
+
+  @Override
+  public long count() {
+    return repo.count();
+  }
+
+  @Override
+  public void deleteById(Long aLong) {
+    repo.deleteById(aLong);
+  }
+
+  @Override
+  public void delete(DiagnosisKey entity) {
+    repo.delete(entity);
+  }
+
+//  @Override
+//  public void deleteAllById(Iterable<? extends Long> longs) {
+//    repo.deleteAllById(longs);
+//  }
+
+  @Override
+  public void deleteAll(Iterable<? extends DiagnosisKey> entities) {
+    repo.deleteAll(entities);
+  }
+
+  @Override
+  public void deleteAll() {
+    repo.deleteAll();
+  }
+
+  public boolean exists(@Param("key_data") byte[] keyData, @Param("submission_type") String submissionType) {
+    String sql = "SELECT CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS BIT) "
+        + "FROM diagnosis_key "
+        + "WHERE key_data="+ byteArrayToHexString(keyData) + " "
+        + "AND submission_type='" + submissionType + "'";
+    return jdbcTemplate.queryForObject(sql, Boolean.class, keyData, submissionType);
+
+  }
+
+  public int countOlderThan(@Param("threshold") long submissionTimestamp) {
+    String sql = "SELECT COUNT(*) FROM diagnosis_key WHERE submission_timestamp<"+ submissionTimestamp + "";
+    return jdbcTemplate.queryForObject(sql, Integer.class, submissionTimestamp);
+  }
+
+  public void deleteOlderThan(@Param("threshold") long submissionTimestamp) {
+    String sql = "DELETE FROM diagnosis_key WHERE submission_timestamp<"+ submissionTimestamp + "";
+    jdbcTemplate.execute(sql);
+  }
+
+  public List<DiagnosisKey> findAllWithTrlGreaterThanOrEqual(@Param("minTrl") int minTrl, @Param("threshold")  long submissionTimestamp) {
+    String sql = "SELECT * FROM diagnosis_key WHERE transmission_risk_level>=" + minTrl + " AND submission_timestamp>=" + submissionTimestamp
+        + " ORDER BY submission_timestamp)";
+    return jdbcTemplate.queryForList(sql, DiagnosisKey.class, minTrl, submissionTimestamp);
+  }
+
+  public boolean saveDoNothingOnConflict(
       @Param("keyData") byte[] keyData,
       @Param("rollingStartIntervalNumber") int rollingStartIntervalNumber,
       @Param("rollingPeriod") int rollingPeriod,
@@ -65,37 +126,7 @@ public interface DiagnosisKeyRepository extends PagingAndSortingRepository<Diagn
       @Param("visited_countries") String[] visitedCountries,
       @Param("report_type") String reportType,
       @Param("days_since_onset_of_symptoms") int daysSinceOnsetOfSymptoms,
-      @Param("consent_to_federation") boolean consentToFederation);
-
-
-  /**
-   * Attempts to write the specified diagnosis key information into the database. If a row with the specified key data
-   * already exists, no data is inserted.
-   *
-   * @param keyData                    The key data of the diagnosis key.
-   * @param rollingStartIntervalNumber The rolling start interval number of the diagnosis key.
-   * @param rollingPeriod              The rolling period of the diagnosis key.
-   * @param submissionTimestamp        The submission timestamp of the diagnosis key.
-   * @param transmissionRisk           The transmission risk level of the diagnosis key.
-   * @param originCountry              The origin country from the app.
-   * @param visitedCountries           The list of countries this transmissions is relevant for.
-   * @param reportType                 The report type of the diagnosis key.
-   * @param jdbcTemplate               JdbcTemplate
-   * @return {@literal true} if the diagnosis key was inserted successfully, {@literal false} otherwise.
-   */
-  default boolean saveDoNothingOnConflictEvil(
-      byte[] keyData,
-      int rollingStartIntervalNumber,
-      int rollingPeriod,
-      long submissionTimestamp,
-      int transmissionRisk,
-      String originCountry,
-      String[] visitedCountries,
-      String reportType,
-      int daysSinceOnsetOfSymptoms,
-      boolean consentToFederation,
-      JdbcTemplate jdbcTemplate) {
-
+      @Param("consent_to_federation") boolean consentToFederation) {
     String sql = "INSERT INTO diagnosis_key "
         + "(key_data, rolling_start_interval_number, rolling_period, submission_timestamp, transmission_risk_level, "
         + "origin_country, visited_countries, report_type, days_since_onset_of_symptoms, consent_to_federation) "
@@ -104,21 +135,10 @@ public interface DiagnosisKeyRepository extends PagingAndSortingRepository<Diagn
         + originCountry + ", " + visitedCountries + ", " + reportType + ", "
         + daysSinceOnsetOfSymptoms + ", " + consentToFederation + ") "
         + "ON CONFLICT DO NOTHING";
-
-    //    sql = "INSERT INTO diagnosis_key
-    //    (key_data, rolling_period, rolling_start_interval_number, submission_timestamp,"
-    //        + " transmission_risk_level, origin_country) VALUES ('" + byteArrayToHexString(keyData)
-    //        + "::bytea ', 0,0,0,0, " + originCountry + ");";
-    System.out.println("sql = " + sql);
     return jdbcTemplate.queryForObject(sql, Boolean.class);
   }
 
-  /**
-   * Converts byte array into hexstring.
-   * @param bytes the bytearray.
-   * @return the hexstring.
-   */
-  private static String byteArrayToHexString(byte[] bytes) {
+  private static String byteArrayToHexString(byte[] bytes){
     StringBuilder hexString = new StringBuilder();
     hexString.append("E\\\\x");
     for (byte b : bytes) {
@@ -128,3 +148,4 @@ public interface DiagnosisKeyRepository extends PagingAndSortingRepository<Diagn
     return hexString.toString();
   }
 }
+

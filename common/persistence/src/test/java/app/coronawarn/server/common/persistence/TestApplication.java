@@ -35,11 +35,9 @@ public class TestApplication {
     return new KeySharingPoliciesChecker();
   }
 
-  @Autowired
-  JdbcTemplate jdbcTemplate;
   @Bean
   DiagnosisKeyService createDiagnosisKeyService(DiagnosisKeyRepository keyRepository) {
-    return new DiagnosisKeyService(keyRepository, validKeysFilter(), jdbcTemplate);
+    return new DiagnosisKeyService(keyRepository, validKeysFilter());
   }
 
   @Bean
